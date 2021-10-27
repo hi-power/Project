@@ -20,11 +20,13 @@ output [2:0] csel;//CONV 運算處理結果寫入/讀取記憶體選擇訊號。
 reg ready;//
 reg busy;
 reg [63:0] x,y,k,m;//img位置判斷
+reg [8:0] z ;
 reg [11:0] iaddr;
-
+reg [61:0] x_addr, y_addr;//test
 reg [2:0] csel;
+reg [63:0] LBP_bin_1, LBP_bin_2, LBP_bin_3, LBP_bin_4, LBP_bin_5, LBP_bin_6, LBP_bin_7, LBP_bin_8, LBP_bin_9;
 
-
+reg [4095:0] i_mem ,
 parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'b100, L2F = 3'b101;//多工器，命名增加可讀性
 
 //========zero pedding=======
@@ -68,7 +70,45 @@ end
 
 always@(posedge clk)
 	m <= k;
+    always@(*) begin
+        case (k)//LBP的位置
+		1 : begin y_addr = y - 1; x_addr = x - 1; end
+		2 : begin y_addr = y - 1; x_addr = x    ; end  
+		3 : begin y_addr = y - 1; x_addr = x + 1; end
+		4 : begin y_addr = y    ; x_addr = x - 1; end
+		5 : begin y_addr = y    ; x_addr = x    ; end
+		6 : begin y_addr = y    ; x_addr = x + 1; end
+		7 : begin y_addr = y + 1; x_addr = x - 1; end
+		8 : begin y_addr = y + 1; x_addr = x    ; end
+		9 : begin y_addr = y + 1; x_addr = x + 1; end
+		endcase
+		gray_addr_tmp = ((y_addr-1)<<3 ) + (x_addr-1);
+		
+end
+ always@(posedge clk)
+     always@(*) begin
+         case (z)
+         1 : if y_addr = 1 and x_addr < 3
+         LBP_bin_1,LBP_bin_2,LBP_bin_3,LBP_bin_4,LBP_bin_7 <= 0; 
+         2 : if y_addr = 1 and x_addr >3
+         LBP_bin_1,LBP_bin_2,LBP_bin_3 <= 0 ;
+         3 : if y_addr = 1 and x_addr > 61
+         LBP_bin_1,LBP_bin_2,LBP_bin_3,LBP_bin_6,LBP_bin_9 <= 0; 
+         4 : if y_addr > 3 and x_addr < 3
+         LBP_bin_1,LBP_bin_4,LBP_bin_7 <= 0 ;
+         5 : if y_addr > 3 and x_addr > 3 
+         LBP_bin_1 <= gray_data;
+         6 : if y_addr > 3 and x_addr >61
+         LBP_bin_3,LBP_bin_6,LBP_bin_9 <= 0 ; 
+         7 : if y_addr >61 and x_addr <3
+         LBP_bin_1,LBP_bin_4,LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0; 
+         8 : if y_addr >61 and x_addr >3
+        LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0 ;
+         9 : if y_addr >61 and x_addr >61
+         LBP_bin_3,LBP_bin_6,LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0; 
 
+         endcase
+end
 //============================================
 always@(posedge clk) begin
  case (m)//收gray_meme給的資料(共9格的資料)
@@ -83,5 +123,9 @@ always@(posedge clk) begin
 	9: LBP_bin_9 <= gray_data;
  endcase
 end
+
+
+endmodule
+
 
 endmodule
