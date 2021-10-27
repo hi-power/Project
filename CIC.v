@@ -26,10 +26,47 @@ reg [2:0] csel;
 
 
 parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'b100, L2F = 3'b101;//多工器，命名增加可讀性
-
+parameter UL=12'h000 ,UR=12'd63,DL=12'h1C0,DR=12'h111,U=12'b0000000?????,R=12'b???????00000,L,D=;
 //========zero pedding=======
 always @(posedge clk) begin
-    
+    /*if (iaddr==UL) begin
+        
+    end
+    else if (iaddr<UR) begin
+        
+    end
+    else if (iaddr>UL && iaddr>UR) begin
+        
+    end*/
+
+    casez (iaddr)
+        UL: begin//左上
+            
+        end
+        2: begin//上
+            
+        end
+        2: begin//右上
+            
+        end
+        2: begin//右
+            
+        end
+        2: begin//右下
+            
+        end
+        2: begin//下
+            
+        end
+        2: begin//左下
+            
+        end
+        2: begin//左
+            
+        end
+        default: 
+    endcase*/
+
 end
 //===========================
 
