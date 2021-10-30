@@ -31,7 +31,19 @@ parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'
 
 //========zero pedding=======
 always @(posedge clk) begin
-    
+    for (i =0 ; i<=63 ; i++)begin
+    {
+      for ( j=0;j<=63 ;i++ ) begin
+          {
+           if(i=0 || j=0 ||i=64||j=64)
+           i_mem[(j<<6 ) + (i)]<=0;
+           else if 
+           i_mem[(j<<6 ) + (i)]<=gray_data         ; 
+          }
+      end
+
+    }
+    end
 end
 //===========================
 
@@ -85,44 +97,26 @@ always@(posedge clk)
 		gray_addr_tmp = ((y_addr-1)<<3 ) + (x_addr-1);
 		
 end
- always@(posedge clk)
-     always@(*) begin
-         case (z)
-         1 : if y_addr = 1 and x_addr < 3
-         LBP_bin_1,LBP_bin_2,LBP_bin_3,LBP_bin_4,LBP_bin_7 <= 0; 
-         2 : if y_addr = 1 and x_addr >3
-         LBP_bin_1,LBP_bin_2,LBP_bin_3 <= 0 ;
-         3 : if y_addr = 1 and x_addr > 61
-         LBP_bin_1,LBP_bin_2,LBP_bin_3,LBP_bin_6,LBP_bin_9 <= 0; 
-         4 : if y_addr > 3 and x_addr < 3
-         LBP_bin_1,LBP_bin_4,LBP_bin_7 <= 0 ;
-         5 : if y_addr > 3 and x_addr > 3 
-         LBP_bin_1 <= gray_data;
-         6 : if y_addr > 3 and x_addr >61
-         LBP_bin_3,LBP_bin_6,LBP_bin_9 <= 0 ; 
-         7 : if y_addr >61 and x_addr <3
-         LBP_bin_1,LBP_bin_4,LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0; 
-         8 : if y_addr >61 and x_addr >3
-        LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0 ;
-         9 : if y_addr >61 and x_addr >61
-         LBP_bin_3,LBP_bin_6,LBP_bin_7,LBP_bin_8,LBP_bin_9 <= 0; 
 
-         endcase
-end
+
 //============================================
 always@(posedge clk) begin
+
  case (m)//收gray_meme給的資料(共9格的資料)
- 	1: LBP_bin_1 <= gray_data;//每一個bin都是8bit
-	2: LBP_bin_2 <= gray_data;
-	3: LBP_bin_3 <= gray_data;
-	4: LBP_bin_4 <= gray_data;
-	5: LBP_bin_5 <= gray_data;
-	6: LBP_bin_6 <= gray_data;
-	7: LBP_bin_7 <= gray_data;
-	8: LBP_bin_8 <= gray_data;
-	9: LBP_bin_9 <= gray_data;
+ 	1: LBP_bin_1 <= i_mem;//每一個bin都是8bit
+	2: LBP_bin_2 <= i_mem;
+	3: LBP_bin_3 <= i_mem;
+	4: LBP_bin_4 <= i_mem;
+	5: LBP_bin_5 <= i_mem;
+	6: LBP_bin_6 <= i_mem;
+	7: LBP_bin_7 <= i_mem;
+	8: LBP_bin_8 <= i_mem;
+	9: LBP_bin_9 <= i_mem;
  endcase
+
 end
+
+
 
 
 endmodule
