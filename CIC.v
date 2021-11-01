@@ -19,6 +19,7 @@ output [2:0] csel;//CONV 運算處理結果寫入/讀取記憶體選擇訊號。
 
 reg ready;//
 reg busy;
+reg zeropedding;
 reg [65:0] x,y,k,m;//img位置判斷x從2~65是原圖片
 reg [6:0] x_addr,y_addr;
 reg [11:0] iaddr,iaddr_temp;
@@ -26,72 +27,97 @@ reg [11:0] iaddr,iaddr_temp;
 reg [2:0] csel;
 reg [3:0] 0judge;
 
+reg [19:0]  Block_1,Block_2,Block_3,Block_4, Block_5, Block_6, Block_7, Block_8, Block_9;
+
 parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'b100, L2F = 3'b101;//多工器，命名增加可讀性
 parameter UL=4'b0000 ,UR=4'b0001,BL=4'b0010,BR=4'b0011,U=4'b0100,R=4'b0101,L=4'b0110,B=4'b0111,M=4'b1000;
 parameter IDLE = 2'b00, LOAD = 2'b01, WRITE = 2'b11, COMP = 2'b10;//多工器，命名增加可讀性
 
-always @(posedge clk) begin//9個zeropedding狀態判斷
-    if (iaddr==12'h000) begin//iaddr==0 x=1 y=1
+always @(posedge zeropedding) begin//9個zeropedding狀態判斷
+    if (x==2 && y==2) begin//iaddr==0 x=2 y=2 iaddr==12'h000
         0judge <= UL;
     end
-    else if(iaddr==12'h03F)begin//iaddr==63 x=64 y=1
+    else if(x==65 && y==2)begin//iaddr==63 x=65 y=2 iaddr==12'h03F
         0judge <= UR;
     end
-    else if(iaddr==12'hFC0)begin//iaddr==4031 x=1 y=64
+    else if(x==2 && y==65)begin//iaddr==4031 x=2 y=65 iaddr==12'hFC0
         0judge <= BL;
     end
-    else if(iaddr==12'hFFF)begin//iaddr==4095 x=64 y=64
+    else if(x==65 && y==65)begin//iaddr==4095 iaddr==12'hFFF x=65 y=65
         0judge <= BR;
     end
-    else if(iaddr<12'h03F)begin
+    else if(y==2)begin //iaddr<12'h03F
         0judge <= U;
     end
-    else if(iaddr>12'hFC0 && iaddr<12'hFFF)begin
+    else if(y==65)begin//iaddr>12'hFC0 && iaddr<12'hFFF
         0judge <= B;
     end
-    else if((iaddr<<6)==12'h000)begin//iaddr%64==0
+    else if(x==2)begin//iaddr%64==0 (iaddr<<6)==12'h000
         0judge <= L;
     end
-    else if((!iaddr<<6)==12'h000)begin//(iaddr+1)%64==0
+    else if(x==65)begin//(iaddr+1)%64==0 (!iaddr<<6)==12'h000
         0judge <= R;
-    end
-    else begin
-        0judge <= M;
     end
 end
 //========實現zero pedding=======
-always @(posedge clk) begin
-     casez (0judge)
+always @(negedge clk) begin
+    if(zeropedding==1)begin
+        casez (0judge)
         UL: begin//左上
-            
+            Block_1 <= 20'h00000;
+            Block_2 <= 20'h00000;
+            Block_3 <= 20'h00000;
+            Block_4 <= 20'h00000;
+            Block_7 <= 20'h00000;
         end
         UR: begin//上
+            Block_1 <= 20'h00000;
+            Block_2 <= 20'h00000;
+            Block_3 <= 20'h00000;
+            Block_6 <= 20'h00000;
+            Block_9 <= 20'h00000;
             
         end
         BL: begin//右上
-            
+            Block_1 <= 20'h00000;
+            Block_4 <= 20'h00000;
+            Block_7 <= 20'h00000;
+            Block_8 <= 20'h00000;
+            Block_9 <= 20'h00000;
         end
         BR: begin//右
-            
+            Block_3 <= 20'h00000;
+            Block_6 <= 20'h00000;
+            Block_7 <= 20'h00000;
+            Block_8 <= 20'h00000;
+            Block_9 <= 20'h00000;
         end
         U: begin//右下
-            
+            Block_1 <= 20'h00000;
+            Block_2 <= 20'h00000;
+            Block_3 <= 20'h00000;
         end
         R: begin//下
-            
+            Block_3 <= 20'h00000;
+            Block_6 <= 20'h00000;
+            Block_9 <= 20'h00000;
         end
         L: begin//左下
-            
+            Block_1 <= 20'h00000;
+            Block_4 <= 20'h00000;
+            Block_7 <= 20'h00000;
         end
         B: begin//左
-            
-        end
-        M: begin//左
-            
+            Block_7 <= 20'h00000;
+            Block_8 <= 20'h00000;
+            Block_9 <= 20'h00000;
         end
         default: 
         reset <= 1;
     endcase
+    zeropedding <= 0;
+    end
+     
 
 end
 //===========================
@@ -124,7 +150,7 @@ always @(posedge clk or posedge reset ) begin
         busy <= 0;
 		end
 	WRITE : begin //一列一列讀，令x為列y為行，可稱為一列一列讀
-		lbp_valid <= 1;
+		
 		if ((x==65)&(y==65)) begin state <= IDLE; finish <= 1; ready <= 0; end //若已經讀到x、y皆為7(8個資料)表示寫入完成，讓finish=1
 		else if (x == 65) begin y <= y + 1; x <= 2; k<= 1; state<= LOAD; ready <= 0;end //若一列x讀完，換行繼續讀
 		else begin x <= x + 1; k<= 1; state<= LOAD; ready <= 0;end//讀該列的x
@@ -134,8 +160,8 @@ always @(posedge clk or posedge reset ) begin
 
 end
 
-/*
-case (csel)
+always @(posedge clk) begin
+    case (csel)
            NSEL : begin//沒有選擇記憶體
                ready <= 1; busy <= 0; crd <= 0; cwr <= 0; x <= 2; y <= 2; k <= 1;
            end
@@ -158,7 +184,10 @@ case (csel)
             default: begin
                 csel <= NSEL; ready <= 1; busy <= 0; crd <= 0; cwr <= 0; x <= 2; y <= 2; k <= 1;
             end
-        endcase
+    endcase
+end
+/*
+
 */
 
 always@(posedge clk)
@@ -166,35 +195,44 @@ always@(posedge clk)
 
 always@(*) begin
 		case (k)//LBP的位置
-		1 : begin y_addr = y - 1; x_addr = x - 1; end
-		2 : begin y_addr = y - 1; x_addr = x    ; end  
-		3 : begin y_addr = y - 1; x_addr = x + 1; end
-		4 : begin y_addr = y    ; x_addr = x - 1; end
-		5 : begin y_addr = y    ; x_addr = x    ; end
-		6 : begin y_addr = y    ; x_addr = x + 1; end
-		7 : begin y_addr = y + 1; x_addr = x - 1; end
-		8 : begin y_addr = y + 1; x_addr = x    ; end
-		9 : begin y_addr = y + 1; x_addr = x + 1; end
-		endcase
-		iaddr_tmp = ((y_addr-2)<<6 ) + (x_addr-2);
+    		1 : begin y_addr = y - 1; x_addr = x - 1; end
+    		2 : begin y_addr = y - 1; x_addr = x    ; end  
+    		3 : begin y_addr = y - 1; x_addr = x + 1; end
+    		4 : begin y_addr = y    ; x_addr = x - 1; end
+    		5 : begin y_addr = y    ; x_addr = x    ; end
+    		6 : begin y_addr = y    ; x_addr = x + 1; end
+    		7 : begin y_addr = y + 1; x_addr = x - 1; end
+    		8 : begin y_addr = y + 1; x_addr = x    ; end
+    		9 : begin y_addr = y + 1; x_addr = x + 1; end
+    	endcase
+        if(y_addr==1 || x_addr==1 || y_addr==66 || x_addr==66)begin
+            zeropedding <= 1;
+            //iaddr_tmp = ((y-2)<<6 ) + (x-2);
+        end
+         else begin
+	    	iaddr_tmp = ((y_addr-2)<<6 ) + (x_addr-2);
+        end
+        
 end
 always @(posedge clk) begin
        iaddr <= iaddr_tmp
 end
 
 //============================================
-always@(posedge clk) begin
- case (m)//收gray_meme給的資料(共9格的資料)
- 	1: LBP_bin_1 <= idata;//每一個bin都是8bit
-	2: LBP_bin_2 <= idata;
-	3: LBP_bin_3 <= idata;
-	4: LBP_bin_4 <= idata;
-	5: LBP_bin_5 <= idata;
-	6: LBP_bin_6 <= idata;
-	7: LBP_bin_7 <= idata;
-	8: LBP_bin_8 <= idata;
-	9: LBP_bin_9 <= idata;
- endcase
+always@(negedge clk) begin
+    if(zeropedding==0)begin
+        case (m)//收texfixture給的img pixal資料(共9格的資料)
+        	1: Block_1 <= idata;//每一個bin都是20bit
+        	2: Block_2 <= idata;
+	        3: Block_3 <= idata;
+	        4: Block_4 <= idata;
+	        5: Block_5 <= idata;
+	        6: Block_6 <= idata;
+	        7: Block_7 <= idata;
+	        8: Block_8 <= idata;
+	        9: Block_9 <= idata;
+        endcase
+    end
 end
 
 endmodule
