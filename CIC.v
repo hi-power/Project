@@ -24,6 +24,8 @@ reg [65:0] x,y,k,m;//img位置判斷x從2~65是原圖片
 reg [6:0] x_addr,y_addr;
 reg [11:0] iaddr,iaddr_temp;
 
+reg [8:0] Kernel1_mem,Kernel2_mem;
+
 reg [2:0] csel;
 reg [3:0] 0judge;
 
@@ -163,7 +165,7 @@ end
 always @(posedge clk) begin
     case (csel)
            NSEL : begin//沒有選擇記憶體
-               ready <= 1; busy <= 0; crd <= 0; cwr <= 0; x <= 2; y <= 2; k <= 1;
+                crd <= 0; cwr <= 0;
            end
            L0K0 : begin//寫入/讀取 Layer 0，Kernel 0 執行 Convolutional 的結果。
 
