@@ -37,7 +37,7 @@ parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'
 parameter UL=4'b0000 ,UR=4'b0001,BL=4'b0010,BR=4'b0011,U=4'b0100,R=4'b0101,L=4'b0110,B=4'b0111,M=4'b1000;
 parameter IDLE = 2'b00, LOAD = 2'b01, CHPIX = 2'b11, COMP = 2'b10;//多工器，命名增加可讀性
 
-always @(posedge zeropedding) begin//9個zeropedding狀態判斷
+/*always @(posedge zeropedding) begin//9個zeropedding狀態判斷
     if (x==2 && y==2) begin//iaddr==0 x=2 y=2 iaddr==12'h000
         0judge <= UL;
     end
@@ -122,7 +122,7 @@ always @(negedge clk) begin
     end
      
 
-end
+end*/
 //===========================
 
 always @(*) begin
@@ -237,8 +237,19 @@ always@(*) begin
     		9 : begin y_addr = y + 1; x_addr = x + 1; end
     	endcase
         if(y_addr==1 || x_addr==1 || y_addr==66 || x_addr==66)begin
-            zeropedding <= 1;
-            //iaddr_tmp = ((y-2)<<6 ) + (x-2);
+            //zeropedding <= 1;
+            case (k)//收texfixture給的img pixal資料(共9格的資料)
+        	    1: Block_1 <= 20'h00000;//每一個bin都是20bit
+        	    2: Block_2 <= 20'h00000;
+	            3: Block_3 <= 20'h00000;
+	            4: Block_4 <= 20'h00000;
+	            5: Block_5 <= 20'h00000;
+	            6: Block_6 <= 20'h00000;
+	            7: Block_7 <= 20'h00000;
+	            8: Block_8 <= 20'h00000;
+	            9: Block_9 <= 20'h00000;
+            endcase
+
         end
          else begin
 	    	iaddr_tmp = ((y_addr-2)<<6 ) + (x_addr-2);
