@@ -32,6 +32,8 @@ reg [3:0] 0judge;
 reg [19:0]  Block_1,Block_2,Block_3,Block_4, Block_5, Block_6, Block_7, Block_8, Block_9;
 reg [19:0]  Block_1_K1,Block_2_K1,Block_3_K1,Block_4_K1, Block_5_K1, Block_6_K1, Block_7_K1, Block_8_K1, Block_9_K1;
 reg [19:0]  Block_1_K0,Block_2_K0,Block_3_K0,Block_4_K0, Block_5_K0, Block_6_K0, Block_7_K0, Block_8_K0, Block_9_K0;
+reg [19:0]  K0,K1;
+reg [19:0]  L0_MEM0,L0_MEM1 ;
 
 parameter NSEL = 3'b000, L0K0 = 3'b001,  L0K1 = 3'b010, L1K0 = 3'b011, L1K1 = 3'b100, L2F = 3'b101;//多工器，命名增加可讀性
 parameter UL=4'b0000 ,UR=4'b0001,BL=4'b0010,BR=4'b0011,U=4'b0100,R=4'b0101,L=4'b0110,B=4'b0111,M=4'b1000;
@@ -125,28 +127,28 @@ always @(negedge clk) begin
 end*/
 //===========================
 
-always @(*) begin
-    /*Kerne0 CONV*/
-     Block_1_K0 <= Block_1*20'h0A89E;
-     Block_2_K0 <= Block_2*20'h092D5;
-     Block_3_K0 <= Block_3*20'h06D43;
-     Block_4_K0 <= Block_4*20'h0A004;
-     Block_5_K0 <= Block_5*20'hF8F71;
-     Block_6_K0 <= Block_6*20'hF6E54;
-     Block_7_K0 <= Block_7*20'hFA6D7;
-     Block_8_K0 <= Block_8*20'hFC834;
-     Block_9_K0 <= Block_9*20'hFAC19;
-    /*Kernel CONV*/
-     Block_1_K1 <= Block_1*20'hFDB55;
-     Block_2_K1 <= Block_2*20'h02992;
-     Block_3_K1 <= Block_3*20'hFC994;
-     Block_4_K1 <= Block_4*20'h050FD;
-     Block_5_K1 <= Block_5*20'h02F20;
-     Block_6_K1 <= Block_6*20'h0202D;
-     Block_7_K1 <= Block_7*20'h03BD7;
-     Block_8_K1 <= Block_8*20'hFD369;
-     Block_9_K1 <= Block_9*20'h05E68;
-end//k=9時才能啟動
+/*always @(*) begin
+    
+     Block_1_K0 <= (Block_1*20'h0A89E-20'h01310 > 0)?Block_1*20'h0A89E-20'h01310:0;
+     Block_2_K0 <= (Block_2*20'h092D5-20'h01310 > 0)?Block_2*20'h092D5-20'h01310:0;
+     Block_3_K0 <= (Block_3*20'h06D43-20'h01310 > 0)?Block_3*20'h06D43-20'h01310:0;
+     Block_4_K0 <= (Block_4*20'h0A004-20'h01310 > 0)?Block_4*20'h0A004-20'h01310:0;
+     Block_5_K0 <= (Block_5*20'hF8F71-20'h01310 > 0)?Block_5*20'hF8F71-20'h01310:0;
+     Block_6_K0 <= (Block_6*20'hF6E54-20'h01310 > 0)?Block_6*20'hF6E54-20'h01310:0;
+     Block_7_K0 <= (Block_7*20'hFA6D7-20'h01310 > 0)?Block_7*20'hFA6D7-20'h01310:0;
+     Block_8_K0 <= (Block_8*20'hFC834-20'h01310 > 0)?Block_8*20'hFC834-20'h01310:0;
+     Block_9_K0 <= (Block_9*20'hFAC19-20'h01310 > 0)?Block_9*20'hFAC19-20'h01310:0;
+    
+     Block_1_K1 <= (Block_1*20'hFDB55-20'hF7295 >0)?Block_1*20'hFDB55-20'hF7295:0;
+     Block_2_K1 <= (Block_2*20'h02992-20'hF7295 >0)?Block_2*20'h02992-20'hF7295:0;
+     Block_3_K1 <= (Block_3*20'hFC994-20'hF7295 >0)?Block_3*20'hFC994-20'hF7295:0;
+     Block_4_K1 <= (Block_4*20'h050FD-20'hF7295 >0)?Block_4*20'h050FD-20'hF7295:0;
+     Block_5_K1 <= (Block_5*20'h02F20-20'hF7295 >0)?Block_5*20'h02F20-20'hF7295:0;
+     Block_6_K1 <= (Block_6*20'h0202D-20'hF7295 >0)?Block_6*20'h0202D-20'hF7295:0;
+     Block_7_K1 <= (Block_7*20'h03BD7-20'hF7295 >0)?Block_7*20'h03BD7-20'hF7295:0;
+     Block_8_K1 <= (Block_8*20'hFD369-20'hF7295 >0)?Block_8*20'hFD369-20'hF7295:0;
+     Block_9_K1 <= (Block_9*20'h05E68-20'hF7295 >0)?Block_9*20'h05E68-20'hF7295:0;
+end//k=9時才能啟動*/
 
 always @(posedge busy) begin
     ready <=0;
@@ -173,7 +175,11 @@ always @(posedge clk or posedge reset ) begin
 		crd <= 0; cwr <= 0;
         busy <= 1;
 		k <= k + 1;
-		if (k == 9) begin state <= COMP;  end//寫入第8狀態時k就會變成9，下一個狀態就會寫入完畢、所以進入COMP狀態
+		if (k == 9) {
+        K0=Block_1_K0+Block_2_K0+Block_3_K0+Block_4_K0+Block_5_K0+Block_6_K0+Block_7_K0+Block_8_K0+Block_9_K0;
+        K1=Block_1_K1+Block_2_K1+Block_3_K1+Block_4_K1+Block_5_K1+Block_6_K1+Block_7_K1+Block_8_K1+Block_9_K1;
+        begin state <= COMP;  end//寫入第8狀態時k就會變成9，下一個狀態就會寫入完畢、所以進入COMP狀態
+        }
 		else state <= LOAD;
 		end
 	COMP : begin //關掉向testfixture讀寫資料的權限，算下一個像素
@@ -197,11 +203,11 @@ always @(posedge clk) begin
                 crd <= 0; cwr <= 0;
            end
            L0K0 : begin//寫入/讀取 Layer 0，Kernel 0 執行 Convolutional 的結果。
-                
+            L0_MEM0=(K0-20'h01310 > 0)?(K0-20'h01310):0;    
                
            end
            L0K1 : begin//寫入/讀取 Layer 0，Kernel 1 執行 Convolutional 的結果。
-               
+            L0_MEM1=(K1-20'hF7295 > 0)?(K1-20'hF7295):0;   
            end
            L1K0 : begin//寫入/讀取 Layer 1，將 Kernel 0 執行 Convolutional後再進行 Max-pooling 運算的結果。
                
@@ -209,7 +215,7 @@ always @(posedge clk) begin
            L1K1 : begin//寫入/讀取 Layer 1，將 Kernel 1 執行 Convolutional後再進行 Max-pooling 運算的結果。
                
            end
-           L2F : begin//表示寫入/讀取 Layer 2，Flatten 層的運算結果。
+           L2F :  begin//表示寫入/讀取 Layer 2，Flatten 層的運算結果。
                
            end
             default: begin
@@ -237,17 +243,54 @@ always@(*) begin
     		9 : begin y_addr = y + 1; x_addr = x + 1; end
     	endcase
         if(y_addr==1 || x_addr==1 || y_addr==66 || x_addr==66)begin
-            //zeropedding <= 1;
+            zeropedding <= 1;
             case (k)//收texfixture給的img pixal資料(共9格的資料)
-        	    1: Block_1 <= 20'h00000;//每一個bin都是20bit
-        	    2: Block_2 <= 20'h00000;
-	            3: Block_3 <= 20'h00000;
-	            4: Block_4 <= 20'h00000;
-	            5: Block_5 <= 20'h00000;
-	            6: Block_6 <= 20'h00000;
-	            7: Block_7 <= 20'h00000;
-	            8: Block_8 <= 20'h00000;
-	            9: Block_9 <= 20'h00000;
+        	    1: begin
+                    Block_1 <= 20'h00000 ;
+                    Block_1_K0 <= Block_1*20'h0A89E;
+                    Block_1_K1 <= Block_1*20'hFDB55;
+                   end
+        	    2: begin
+                    Block_2 <= 20'h00000 ;
+                    Block_2_K0 <= Block_2*20'h092D5;
+                    Block_2_K1 <= Block_2*20'h02992;
+                   end
+	            3: begin
+                    Block_3 <= 20'h00000 ;
+                    Block_3_K0 <= Block_3*20'h06D43;
+                    Block_3_K1 <= Block_3*20'hFC994;
+                   end
+                   end
+	            4: begin
+                    Block_4 <= 20'h00000 ;
+                    Block_4_K0 <= Block_4*20'h0A004;
+                    Block_4_K1 <= Block_4*20'h050FD;
+                   end
+	            5:begin
+                    Block_5 <= 20'h00000 ;
+                    Block_5_K0 <= Block_5*20'hF8F71;
+                    Block_5_K1 <= Block_5*20'h02F20;
+                   end
+	            6: begin
+                    Block_6 <= 20'h00000 ;
+                    Block_6_K0 <= Block_6*20'hF6E54;
+                    Block_6_K1 <= Block_6*20'h0202D;
+                   end
+	            7: begin
+                    Block_7 <= 20'h00000 ;
+                   Block_7_K0 <= Block_7*20'hFA6D7;
+                   Block_7_K1 <= Block_7*20'h03BD7;
+                   end
+	            8: begin
+                    Block_8 <= 20'h00000 ;
+                    Block_8_K0 <= Block_8*20'hFC834;
+                    Block_8_K1 <= Block_8*20'hFD369;
+                   end
+	            9: begin
+                    Block_9 <= 20'h00000 ;
+                    Block_9_K0 <= Block_9*20'hFAC19;
+                    Block_9_K1 <= Block_9*20'h05E68;
+                   end
             endcase
 
         end
@@ -263,16 +306,54 @@ end
 //============================================
 always@(negedge clk) begin
     if(zeropedding==0)begin
+        
         case (m)//收texfixture給的img pixal資料(共9格的資料)
-        	1: Block_1 <= idata;//每一個bin都是20bit
-        	2: Block_2 <= idata;
-	        3: Block_3 <= idata;
-	        4: Block_4 <= idata;
-	        5: Block_5 <= idata;
-	        6: Block_6 <= idata;
-	        7: Block_7 <= idata;
-	        8: Block_8 <= idata;
-	        9: Block_9 <= idata;
+        	1:begin
+               Block_1 <= idata ;
+               Block_1_K0 <= Block_1*20'h0A89E;//每一個bin都是20bit
+               Block_1_K1 <= Block_1*20'hFDB55;
+              end
+        	2: begin
+               Block_2 <= idata ;
+               Block_2_K0 <= Block_2*20'h092D5;
+               Block_2_K1 <= Block_2*20'h02992;
+               end
+	        3: begin
+               Block_3 <= idata ;
+               Block_3_K0 <= Block_3*20'h06D43;
+               Block_3_K1 <= Block_3*20'hFC994;
+               end
+	        4: begin
+               Block_4 <= idata ;
+               Block_4_K0 <= Block_4*20'h0A004;
+               Block_4_K1 <= Block_4*20'h050FD;
+               end
+	        5: begin
+               Block_5 <= idata ;
+               Block_5_K0 <= Block_5*20'hF8F71;
+               Block_5_K1 <= Block_5*20'h02F20;
+               end
+	        6: begin
+               Block_6 <= idata ;
+               Block_6_K0 <= Block_6*20'hF6E54;
+               Block_6_K1 <= Block_6*20'h0202D;
+               end
+	        7: begin
+               Block_7 <= idata ;
+               Block_7_K0 <= Block_7*20'hFA6D7;
+               Block_7_K1 <= Block_7*20'h03BD7;
+               end
+	        8: begin
+               Block_8 <= idata ;
+               Block_8_K0 <= Block_8*20'hFC834;
+               Block_8_K1 <= Block_8*20'hFD369;
+               end
+	        9: begin
+               Block_9 <= idata ;
+               Block_9_K0 <= Block_9*20'hFAC19;
+               Block_9_K1 <= Block_9*20'h05E68;
+               end
+            
         endcase
     end
 end
